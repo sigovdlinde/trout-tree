@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Trout Family Tree</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="content">
+        <form method="POST">
+            <label for="trout_id">Enter Trout ID:</label>
+            <input type="text" id="trout_id" name="trout_id">
+            <input type="submit" value="Show Family Tree">
+            <div>
+                <input type="radio" id="ancestors" name="tree_type" value="ancestors" checked>
+                <label for="ancestors">Ancestors</label>
+                <input type="radio" id="descendants" name="tree_type" value="descendants">
+                <label for="descendants">Descendants</label>
+            </div>
+            <label for="show_images">Show Images:</label>
+            <input type="checkbox" id="show_images" name="show_images" value="true">
+        </form>
+
+        {% if trout_id %}
+            <h1>The proud trout family tree of trout #{{ trout_id }}</h1>
+        {% endif %}
+        
+        {% if family_tree_image %}
+            <img src="{{ family_tree_image }}" alt="Family Tree">
+        {% endif %}
+    </div>
+</body>
+</html>
