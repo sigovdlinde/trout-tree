@@ -119,7 +119,7 @@ def add_descendants_to_graph(graph, parent_id, descendants, inbreeding_dict):
 # Define a color map with a lighter green and red gradient
 def get_color(inbreeding_coefficient):
     # Normalize the inbreeding coefficient to be between 0 and 1
-    normalized_coefficient = inbreeding_coefficient / 100.0
+    normalized_coefficient = inbreeding_coefficient / 1000.0
     # Create a red-light green colormap
     color = mcolors.LinearSegmentedColormap.from_list("", ["#4bbf4b","red"])  # lighter green
     # Return the corresponding color for the normalized coefficient
