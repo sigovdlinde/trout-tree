@@ -130,11 +130,11 @@ def index():
     trout_id = None
     family_tree_image = None
     # Set a default value for tree_type in case it's not in the form data
-    tree_type = request.form.get('tree_type', 'ancestors')
+    tree_type = request.form.get('tree_type', 'full_tree')
 
     if request.method == 'POST':
         trout_id = request.form.get('trout_id')
-        tree_type = request.form['tree_type']
+        tree_type = request.form.get('tree_type', 'full_tree')
 
         # Connect to the SQLite database
         conn = sqlite3.connect('nftrout.sqlite')
@@ -152,6 +152,12 @@ def index():
             add_nodes_edges(G, family_tree[int(trout_id)], inbreeding_dict)
         elif tree_type == 'descendants':
             # Build the full descendant tree for the given trout
+            descendant_tree = build_full_descendant_tree(conn, int(trout_id))
+            add_descendants_to_graph(G, int(trout_id), descendant_tree, inbreeding_dict)
+        elif tree_type == 'full_tree':
+            # Combine both ancestors and descendants into the full tree
+            family_tree = build_family_tree(conn, int(trout_id))
+            add_nodes_edges(G, family_tree[int(trout_id)], inbreeding_dict)
             descendant_tree = build_full_descendant_tree(conn, int(trout_id))
             add_descendants_to_graph(G, int(trout_id), descendant_tree, inbreeding_dict)
 
