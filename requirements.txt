@@ -3,3 +3,4 @@ matplotlib==3.8.0
 matplotlib-inline==0.1.6
 Pillow==10.1.0
 networkx==3.2.1
+gunicorn==21.2.0
