@@ -37,6 +37,8 @@ GROUP BY self_id
 ORDER BY inbreeding_coefficient DESC;
 """
 
+os.environ["GRAPHVIZ_DOT"] = "/app/.apt/usr/bin/dot"
+
 # This is your existing function to build a family tree, unchanged
 def fetch_parent(conn, child_id):
     """Fetch the parents of a given trout."""
