@@ -135,7 +135,6 @@ def index():
     if request.method == 'POST':
         trout_id = request.form.get('trout_id')
         tree_type = request.form['tree_type']
-        show_images = 'show_images' in request.form
 
         # Connect to the SQLite database
         conn = sqlite3.connect('nftrout.sqlite')
@@ -159,6 +158,7 @@ def index():
         # Close the database connection
         conn.close()
 
+        show_images = False
         if show_images:
 
             # Now draw the graph using the new method
