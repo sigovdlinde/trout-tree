@@ -135,6 +135,7 @@ def index():
     if request.method == 'POST':
         trout_id = request.form.get('trout_id')
         tree_type = request.form.get('tree_type', 'full_tree')
+        show_images = request.form.get('show_images')
 
         # Connect to the SQLite database
         conn = sqlite3.connect('nftrout.sqlite')
@@ -164,7 +165,6 @@ def index():
         # Close the database connection
         conn.close()
 
-        show_images = False
         if show_images:
 
             # Now draw the graph using the new method
@@ -177,7 +177,7 @@ def index():
                 img = Image.open(image_path)
                 
                 # Do not resize to thumbnail, use the original size, or resize to a size that maintains quality
-                desired_size = (200, 200)  # Adjust as needed based on the original image size
+                desired_size = (218, 133)  # Adjust as needed based on the original image size
                 img = img.resize(desired_size, Image.Resampling.LANCZOS)
                 
                 xi, yi = pos[node]
@@ -192,12 +192,12 @@ def index():
                 border_rect = Rectangle((xi - border_size / 2, yi - border_size / 3),
                                         border_size, border_size / 3, linewidth=2,
                                         edgecolor=rgba_color, facecolor='none', zorder=0)
-                ax.add_patch(border_rect)
+                # ax.add_patch(border_rect)
 
                 im = OffsetImage(img, zoom=zoom_factor)
                 ab = AnnotationBbox(im, (xi, yi), xycoords='data', frameon=False, zorder=1)
                 ax.add_artist(ab)
-                ax.text(xi, yi + border_size / 4 + 2, f'#{node}', ha='center', va='bottom', zorder=2, color='black', fontsize=20)
+                ax.text(xi, yi + 8, f'#{node}', ha='center', va='bottom', zorder=2, color='black', fontsize=20)
             
             plt.axis('off')
 
