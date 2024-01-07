@@ -170,7 +170,7 @@ def index():
             # Draw the graph
             node_count = len(G.nodes)
             if node_count < 20:
-                figsize = (12, 12)
+                figsize = (20, 20)
             else:
                 figsize = (50, 50)
 
