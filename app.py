@@ -167,8 +167,15 @@ def index():
 
         if show_images:
 
+            # Draw the graph
+            node_count = len(G.nodes)
+            if node_count < 20:
+                figsize = (12, 12)
+            else:
+                figsize = (50, 50)
+
             # Now draw the graph using the new method
-            fig, ax = plt.subplots(figsize=(50, 50))
+            fig, ax = plt.subplots(figsize=figsize)
             pos = graphviz_layout(G, prog='dot', args='-Grankdir=TB')
             nx.draw_networkx_edges(G, pos, arrows=True)
             
