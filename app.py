@@ -169,10 +169,15 @@ def index():
 
             # Draw the graph
             node_count = len(G.nodes)
-            if node_count < 20:
+            if node_count < 15:
                 figsize = (20, 20)
+                size_x = 218
+                size_y = 133
+
             else:
-                figsize = (50, 50)
+                figsize = (30, 30)
+                size_x = 109
+                size_y = 66
 
             # Now draw the graph using the new method
             fig, ax = plt.subplots(figsize=figsize)
@@ -184,7 +189,7 @@ def index():
                 img = Image.open(image_path)
                 
                 # Do not resize to thumbnail, use the original size, or resize to a size that maintains quality
-                desired_size = (218, 133)  # Adjust as needed based on the original image size
+                desired_size = (size_x, size_y)  # Adjust as needed based on the original image size
                 img = img.resize(desired_size, Image.Resampling.LANCZOS)
                 
                 xi, yi = pos[node]
