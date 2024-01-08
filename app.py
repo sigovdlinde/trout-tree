@@ -174,10 +174,14 @@ def index():
                 size_x = 218
                 size_y = 133
 
-            else:
+            elif node_count < 30:
                 figsize = (30, 30)
                 size_x = 109
                 size_y = 66
+            else:
+                figsize = (30, 30)
+                size_x = 54
+                size_y = 33
 
             # Now draw the graph using the new method
             fig, ax = plt.subplots(figsize=figsize)
