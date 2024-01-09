@@ -14,8 +14,6 @@ from networkx.drawing.nx_agraph import graphviz_layout
 import sqlite3
 import os
 
-import requests
-
 app = Flask(__name__)
 
 # Execute the ancestry query
@@ -39,87 +37,74 @@ GROUP BY self_id
 ORDER BY inbreeding_coefficient DESC;
 """
 
-API_URL = "https://api.nftrout.com/trout/23294/"
+# os.environ["GRAPHVIZ_DOT"] = "/app/.apt/usr/bin/dot"
 
-def get_api_data():
-    response = requests.get(API_URL)
-    if response.status_code == 200:
-        return response.json()
-    else:
-        return None
+# This is your existing function to build a family tree, unchanged
+def fetch_parent(conn, child_id):
+    """Fetch the parents of a given trout."""
+    query = """
+    SELECT id, name, left_parent_id, right_parent_id
+    FROM tokens
+    WHERE id = ?
+    """
+    parent = conn.execute(query, (child_id,)).fetchone()
+    return parent
 
-def process_api_data(api_data):
-    trouts = api_data['result']  # Extract the list of trouts
-    processed_data = {trout['id']: trout for trout in trouts}
-    print(processed_data)
-    return processed_data
-
-
-def fetch_parent(data, child_id):
-    """Fetch the parents of a given trout from the processed API data."""
-    trout = data.get(child_id)
-    if trout:
-        left_parent_id = None
-        right_parent_id = None
-        if trout.get('parents'):
-            parents = trout['parents']
-            if len(parents) > 0:
-                left_parent_id = parents[0].get('tokenId')  # Assuming first parent is 'left'
-            if len(parents) > 1:
-                right_parent_id = parents[1].get('tokenId')  # Assuming second parent is 'right'
-
-        return trout['id'], trout['owner'], left_parent_id, right_parent_id
-    return None
-
-
-def build_family_tree(data, trout_id, tree=None, level=0):
-    """Recursively build the family tree using the processed API data."""
+def build_family_tree(conn, trout_id, tree=None, level=0):
+    """Recursively build the family tree."""
     if tree is None:
         tree = {}
 
-    trout = fetch_parent(data, trout_id)
+    trout = fetch_parent(conn, trout_id)
     if trout is None:
         return None
 
+    # Add trout to the tree
     tree[trout[0]] = {'name': trout[1], 'level': level, 'children': {}}
 
+    # Recursively add parents if they exist
     if trout[2] is not None:  # left parent
-        tree[trout[0]]['children']['left'] = build_family_tree(data, trout[2], {}, level + 1)
+        tree[trout[0]]['children']['left'] = build_family_tree(conn, trout[2], {}, level + 1)
     if trout[3] is not None:  # right parent
-        tree[trout[0]]['children']['right'] = build_family_tree(data, trout[3], {}, level + 1)
+        tree[trout[0]]['children']['right'] = build_family_tree(conn, trout[3], {}, level + 1)
 
     return tree
 
 def add_nodes_edges(graph, node, inbreeding_dict, level=0):
-    print(node)
-    node_id = node['id']  # Use the ID directly
-    inbreeding_coefficient = inbreeding_dict.get(node_id, 0)
-    graph.add_node(node_id, level=level, inbreeding=inbreeding_coefficient)
+    node_name = node['name'].split('#')[-1].strip()
+    inbreeding_coefficient = inbreeding_dict.get(int(node_name), 0)
+    graph.add_node(node_name, level=level, inbreeding=inbreeding_coefficient)
     
-    for child_key, child_node in node['children'].items():
+    for child_id, child_node in node['children'].items():
         if child_node:
-            child_id = child_node['id']
-            graph.add_node(child_id, level=level + 1, inbreeding=inbreeding_dict.get(child_id, 0))
-            graph.add_edge(node_id, child_id)
-            add_nodes_edges(graph, child_node, inbreeding_dict, level + 1)
+            # Now do the same for the child nodes
+            for actual_child_id, actual_child in child_node.items():
+                if actual_child:
+                    child_name = actual_child['name'].split('#')[-1].strip()
+                    graph.add_node(child_name, level=level+1, inbreeding=inbreeding_dict.get(int(child_name), 0))
+                    graph.add_edge(child_name, node_name)
+                    # Pass inbreeding_dict properly here
+                    add_nodes_edges(graph, actual_child, inbreeding_dict, level + 1)
 
-def fetch_direct_descendants(data, parent_id):
+def fetch_direct_descendants(conn, parent_id):
     """Fetch the direct descendants of a given trout."""
-    descendants = []
-    for id, trout in data.items():
-        if trout.get('parents') and parent_id in [p['tokenId'] for p in trout['parents']]:
-            descendants.append((id, trout['owner']))  # Assuming 'owner' is a relevant field
+    query = """
+    SELECT id, name
+    FROM tokens
+    WHERE left_parent_id = ? OR right_parent_id = ?
+    """
+    descendants = conn.execute(query, (parent_id, parent_id)).fetchall()
     return descendants
 
 
-def build_full_descendant_tree(data, trout_id):
+def build_full_descendant_tree(conn, trout_id):
     """Recursively build the full descendant tree of a given trout."""
     descendants = {}
-    direct_descendants = fetch_direct_descendants(data, trout_id)
+    direct_descendants = fetch_direct_descendants(conn, trout_id)
 
-    for descendant_id, owner in direct_descendants:
+    for descendant_id, name in direct_descendants:
         # Recursive call to build the descendant subtree
-        descendants[descendant_id] = build_full_descendant_tree(data, descendant_id)
+        descendants[descendant_id] = build_full_descendant_tree(conn, descendant_id)
 
     return descendants
 
@@ -142,12 +127,6 @@ def get_color(inbreeding_coefficient):
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
-    api_data = get_api_data()
-    if api_data is None:
-        return "Error fetching data from API", 500
-
-    processed_data = process_api_data(api_data)
-
     trout_id = None
     family_tree_image = None
     # Set a default value for tree_type in case it's not in the form data
@@ -159,11 +138,10 @@ def index():
         show_images = request.form.get('show_images')
 
         # Connect to the SQLite database
-        # conn = sqlite3.connect('nftrout.sqlite')
+        conn = sqlite3.connect('nftrout.sqlite')
 
         # Fetch the inbreeding coefficients
-        # inbreeding_dict = {row[0]: row[1] for row in conn.execute(ancestry_query)}
-        inbreeding_dict = {}
+        inbreeding_dict = {row[0]: row[1] for row in conn.execute(ancestry_query)}
 
         # Create a networkx graph
         G = nx.DiGraph()
@@ -171,21 +149,21 @@ def index():
         # Depending on the type of tree requested, build the appropriate tree
         if tree_type == 'ancestors':
             # Call your existing function to build the family tree
-            family_tree = build_family_tree(processed_data, int(trout_id))
+            family_tree = build_family_tree(conn, int(trout_id))
             add_nodes_edges(G, family_tree[int(trout_id)], inbreeding_dict)
         elif tree_type == 'descendants':
             # Build the full descendant tree for the given trout
-            descendant_tree = build_full_descendant_tree(processed_data, int(trout_id))
+            descendant_tree = build_full_descendant_tree(conn, int(trout_id))
             add_descendants_to_graph(G, int(trout_id), descendant_tree, inbreeding_dict)
         elif tree_type == 'full_tree':
             # Combine both ancestors and descendants into the full tree
-            family_tree = build_family_tree(processed_data, int(trout_id))
+            family_tree = build_family_tree(conn, int(trout_id))
             add_nodes_edges(G, family_tree[int(trout_id)], inbreeding_dict)
-            descendant_tree = build_full_descendant_tree(processed_data, int(trout_id))
+            descendant_tree = build_full_descendant_tree(conn, int(trout_id))
             add_descendants_to_graph(G, int(trout_id), descendant_tree, inbreeding_dict)
 
         # Close the database connection
-        # conn.close()
+        conn.close()
 
         if show_images:
 
@@ -195,6 +173,7 @@ def index():
                 figsize = (20, 20)
                 size_x = 218
                 size_y = 133
+
             else:
                 figsize = (30, 30)
                 size_x = 109
@@ -271,7 +250,7 @@ def index():
 
 
     # Initial or non-POST request
-    return render_template('index.html', family_tree_image=None, data=processed_data)
+    return render_template('index.html', family_tree_image=None)
 
 
 if __name__ == '__main__':
