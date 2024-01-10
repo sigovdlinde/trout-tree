@@ -168,7 +168,12 @@ def index():
     if request.method == 'POST':
         trout_id = request.form.get('trout_id')
         tree_type = request.form.get('tree_type', 'full_tree')
-        show_images = request.form.get('show_images')
+        # show_images = request.form.get('show_images')
+
+            #         <label for="show_images">Show Images:</label>
+            # <input type="checkbox" id="show_images" name="show_images" value="true">
+        
+        show_images = False
 
         G = nx.DiGraph()
 
