@@ -18,6 +18,8 @@ import requests
 
 import cairosvg
 
+import numpy as np
+
 app = Flask(__name__)
 
 def get_api_data():
@@ -68,14 +70,12 @@ def download_and_convert_trout_images(directory='./static/trouts'):
                 file.write(response.content)
             
             cairosvg.svg2png(url=svg_file_path, write_to=png_file_path)
-            print(trout_number)
             
             os.remove(svg_file_path)
         else:
             print(f"Failed to download image for trout #{trout_number}")
             print(f"Status Code: {response.status_code}")
             print(f"Response Body: {response.text}")
-
 
 def fetch_parent(data, child_id):
     trout = data.get(child_id)
@@ -87,9 +87,12 @@ def fetch_parent(data, child_id):
         print(f"Trout with ID {child_id} not found in data")
         return None
 
-def build_family_tree(data, trout_id, tree=None, level=0):
+def build_family_tree(data, trout_id, tree=None, level=0, max_level=2):
     if tree is None:
         tree = {}
+
+    if level > max_level:
+        return None
 
     trout_info = fetch_parent(data, trout_id)
     if trout_info is None:
@@ -100,9 +103,9 @@ def build_family_tree(data, trout_id, tree=None, level=0):
     left_parent_id = trout_info[2]
     right_parent_id = trout_info[3]
     if left_parent_id:
-        tree[trout_info[0]]['children']['left'] = build_family_tree(data, left_parent_id, {}, level + 1)
+        tree[trout_info[0]]['children']['left'] = build_family_tree(data, left_parent_id, {}, level + 1, max_level)
     if right_parent_id:
-        tree[trout_info[0]]['children']['right'] = build_family_tree(data, right_parent_id, {}, level + 1)
+        tree[trout_info[0]]['children']['right'] = build_family_tree(data, right_parent_id, {}, level + 1, max_level)
 
     return tree
 
@@ -127,16 +130,20 @@ def fetch_direct_descendants(data, parent_id):
             descendants.append({'id': id, 'coi': trout['coi']})
     return descendants
 
-def build_full_descendant_tree(data, trout_id):
-    """Recursively build the full descendant tree of a given trout."""
+def build_full_descendant_tree(data, trout_id, level=0, max_level=1):
+    if level > max_level:
+        return {}
+
     descendant_tree = {}
     direct_descendants = fetch_direct_descendants(data, trout_id)
 
     for descendant in direct_descendants:
         descendant_id = descendant['id']
         descendant_coi = descendant['coi']
-        # Recursive call to build the descendant subtree
-        descendant_tree[descendant_id] = {'coi': descendant_coi, 'descendants': build_full_descendant_tree(data, descendant_id)}
+        descendant_tree[descendant_id] = {
+            'coi': descendant_coi, 
+            'descendants': build_full_descendant_tree(data, descendant_id, level + 1, max_level)
+        }
 
     return descendant_tree
 
@@ -168,71 +175,86 @@ def index():
     if request.method == 'POST':
         trout_id = request.form.get('trout_id')
         tree_type = request.form.get('tree_type', 'full_tree')
-        # show_images = request.form.get('show_images')
-
-            #         <label for="show_images">Show Images:</label>
-            # <input type="checkbox" id="show_images" name="show_images" value="true">
-        
-        show_images = False
+        show_images = request.form.get('show_images')
 
         G = nx.DiGraph()
 
-        # Depending on the type of tree requested, build the appropriate tree
+    if request.method == 'POST':
+        show_images = request.form.get('show_images') == 'true'
+        trout_id = request.form.get('trout_id')
+        tree_type = request.form.get('tree_type', 'full_tree')
+
+        max_level = 1 if show_images else float('inf')  # Adjust maximum level based on show_images
+
+        G = nx.DiGraph()
+
         if tree_type == 'ancestors':
-            family_tree = build_family_tree(processed_data, int(trout_id))
+            family_tree = build_family_tree(processed_data, int(trout_id), max_level=2 if show_images else float('inf'))
             add_nodes_edges(G, family_tree[int(trout_id)])
+            # Rest of your code...
         elif tree_type == 'descendants':
-            descendant_tree = build_full_descendant_tree(processed_data, int(trout_id))
+            descendant_tree = build_full_descendant_tree(processed_data, int(trout_id), max_level=1 if show_images else float('inf'))
             add_descendants_to_graph(G, int(trout_id), descendant_tree)
+            # Rest of your code...
         elif tree_type == 'full_tree':
-            family_tree = build_family_tree(processed_data, int(trout_id))
+            family_tree = build_family_tree(processed_data, int(trout_id), max_level=2 if show_images else float('inf'))
+            descendant_tree = build_full_descendant_tree(processed_data, int(trout_id), max_level=1 if show_images else float('inf'))
             add_nodes_edges(G, family_tree[int(trout_id)])
-            descendant_tree = build_full_descendant_tree(processed_data, int(trout_id))
             add_descendants_to_graph(G, int(trout_id), descendant_tree)
 
         if show_images:
-
             # Update trout images.
             download_and_convert_trout_images()
 
-            node_count = len(G.nodes)
-            if node_count < 15:
-                figsize = (20, 20)
-                size_x = 218
-                size_y = 133
-            else:
-                figsize = (30, 30)
-                size_x = 109
-                size_y = 66
-            # Now draw the graph using the new method
-            fig, ax = plt.subplots(figsize=figsize)
+            # Set a fixed figure size with a high DPI
+            figsize = (12, 12)
+            dpi = 300
+            fig, ax = plt.subplots(figsize=figsize, dpi=dpi)
             pos = graphviz_layout(G, prog='dot', args='-Grankdir=TB')
             nx.draw_networkx_edges(G, pos, arrows=True)
-            
+
+            # Get axes limits to keep them fixed
+            x_lim = ax.get_xlim()
+            y_lim = ax.get_ylim()
+
             for node in G.nodes():
                 image_path = f'./static/trouts/trout_{node}.png'
                 img = Image.open(image_path)
-                
-                desired_size = (size_x, size_y)
-                img = img.resize(desired_size, Image.Resampling.LANCZOS)
-                
-                xi, yi = pos[node]
-                rgba_color = get_color(G.nodes[node].get('inbreeding', 0))
-                # Adjust zoom factor to match the image size
-                zoom_factor = desired_size[0] / img.size[0]
-                xi, yi = pos[node]
-                rgba_color = get_color(G.nodes[node].get('inbreeding', 0))
+
+                # Calculate the size of the image in the graph coordinates
+                node_width = (x_lim[1] - x_lim[0]) / (len(G.nodes)**0.5)  # Adjust as needed
+                node_height = (y_lim[1] - y_lim[0]) / (len(G.nodes)**0.5)  # Adjust as needed
+
+                # Calculate the zoom factor
+                zoom_factor_width = node_width / img.size[0]
+                zoom_factor_height = node_height / img.size[1]
+                zoom_factor = min(zoom_factor_width, zoom_factor_height)
 
                 im = OffsetImage(img, zoom=zoom_factor)
-                ab = AnnotationBbox(im, (xi, yi), xycoords='data', frameon=False, zorder=1)
+                xi, yi = pos[node]
+                ab = AnnotationBbox(im, (xi, yi), frameon=False)
                 ax.add_artist(ab)
-                ax.text(xi, yi + 8, f'#{node}', ha='center', va='bottom', zorder=2, color='black', fontsize=20)
-            
+
+                # Adjust these offsets based on the zoom factor to position the text correctly
+                text_offset_x = (img.size[0] * zoom_factor) * -0.11  # Left from the center of the image
+                text_offset_y = (img.size[1] * zoom_factor) * 0.04   # Above the center of the image
+
+                # Place text at the adjusted position
+                ax.text(xi + text_offset_x, yi + text_offset_y, f'{node}', 
+                        ha='left', va='bottom', fontsize=10, color='black', weight='bold', zorder=3)
+
+
+            # Fix the axes limits
+            ax.set_xlim(x_lim)
+            ax.set_ylim(y_lim)
+
+            # Save the figure
             plt.axis('off')
             plot_filename = 'family_tree.png'
-            plt.savefig(f'./static/{plot_filename}', dpi=300)
+            plt.savefig(f'./static/{plot_filename}', bbox_inches='tight', pad_inches=0)
             plt.close()
-            return render_template('index.html', family_tree_image=url_for('static', filename=plot_filename))
+
+            return render_template('index.html', trout_id=trout_id, family_tree_image=url_for('static', filename=plot_filename))
         else:
             pos = graphviz_layout(G, prog='dot', args='-Grankdir=TB')
             node_colors = [get_color(G.nodes[node].get('inbreeding', 0)) for node in G.nodes()]
@@ -250,7 +272,7 @@ def index():
 
             plt.savefig('static/family_tree.png')
             plt.close()
-            return render_template('index.html', family_tree_image='static/family_tree.png')
+            return render_template('index.html', trout_id=trout_id, family_tree_image='static/family_tree.png')
 
     # Initial or non-POST request
     return render_template('index.html', family_tree_image=None, data=processed_data)
