@@ -222,8 +222,8 @@ def index():
                 img = Image.open(image_path)
 
                 # Calculate the size of the image in the graph coordinates
-                node_width = (x_lim[1] - x_lim[0]) / (len(G.nodes)**0.5)  # Adjust as needed
-                node_height = (y_lim[1] - y_lim[0]) / (len(G.nodes)**0.5)  # Adjust as needed
+                node_width = (x_lim[1] - x_lim[0]) / (len(G.nodes)**0.7)  # Adjust as needed
+                node_height = (y_lim[1] - y_lim[0]) / (len(G.nodes)**0.7)  # Adjust as needed
 
                 # Calculate the zoom factor
                 zoom_factor_width = node_width / img.size[0]
@@ -236,8 +236,8 @@ def index():
                 ax.add_artist(ab)
 
                 # Adjust these offsets based on the zoom factor to position the text correctly
-                text_offset_x = (img.size[0] * zoom_factor) * -0.11  # Left from the center of the image
-                text_offset_y = (img.size[1] * zoom_factor) * 0.04   # Above the center of the image
+                text_offset_x = (img.size[0] * zoom_factor) * -0.31  # Left from the center of the image
+                text_offset_y = (img.size[1] * zoom_factor) * 0.1   # Above the center of the image
 
                 # Place text at the adjusted position
                 ax.text(xi + text_offset_x, yi + text_offset_y, f'{node}', 
