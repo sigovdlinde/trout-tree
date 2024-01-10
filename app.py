@@ -159,6 +159,8 @@ def get_color(inbreeding_coefficient):
 @app.route('/', methods=['GET', 'POST'])
 def index():
     api_data = get_api_data()
+    if api_data is None:
+        return "Error fetching data from API", 500
     processed_data = process_api_data(api_data)
 
     trout_id = None
@@ -247,13 +249,14 @@ def index():
             plt.close()
             return render_template('index.html', family_tree_image='static/family_tree.png')
 
+    # Initial or non-POST request
     return render_template('index.html', family_tree_image=None, data=processed_data)
 
-# START WORKING HERE.
 @app.route('/statistics')
 def statistics():
     api_data = get_api_data()
     processed_data = process_api_data(api_data)
+
     return render_template('statistics.html')
 
 if __name__ == '__main__':
