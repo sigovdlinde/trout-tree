@@ -206,9 +206,15 @@ def index():
             # Update trout images.
             download_and_convert_trout_images()
 
-            # Set a fixed figure size with a high DPI
-            figsize = (12, 12)
-            dpi = 300
+            node_count = len(G.nodes)
+
+            if node_count < 4:
+                figsize = (3, 3)
+                dpi = 500
+            else:
+                figsize = (12, 12)
+                dpi = 300
+
             fig, ax = plt.subplots(figsize=figsize, dpi=dpi)
             pos = graphviz_layout(G, prog='dot', args='-Grankdir=TB')
             nx.draw_networkx_edges(G, pos, arrows=True)
