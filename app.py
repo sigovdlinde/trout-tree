@@ -18,12 +18,10 @@ import requests
 
 import cairosvg
 
-API_URL = "https://api.nftrout.com/trout/23294/"
-
 app = Flask(__name__)
 
 def get_api_data():
-    response = requests.get(API_URL)
+    response = requests.get('https://api.nftrout.com/trout/23294/')
     if response.status_code == 200:
         return response.json()
     else:
