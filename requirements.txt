@@ -5,3 +5,4 @@ Pillow==10.1.0
 networkx==3.2.1
 gunicorn==21.2.0
 pygraphviz==1.11
+cairosvg==2.7.1

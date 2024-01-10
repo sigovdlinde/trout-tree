@@ -29,7 +29,6 @@ def get_api_data():
     else:
         return None
 
-
 def process_api_data(api_data):
     trouts = api_data['result']
     processed_data = {trout['id']: trout for trout in trouts}
@@ -46,7 +45,7 @@ def get_latest_trout_number(api_url):
         raise Exception("Could not fetch the latest trout number from the API")
 
 def generate_trout_image_url(trout_number):
-    return f'https://api.nftrout.com/trout/{trout_number}/image.svg'
+    return f'https://api.nftrout.com/trout/23294/{trout_number}/image.svg'
 
 def download_and_convert_trout_images(directory='./static/trouts'):
     if not os.path.exists(directory):
@@ -75,11 +74,14 @@ def download_and_convert_trout_images(directory='./static/trouts'):
             
             # Convert SVG to PNG
             cairosvg.svg2png(url=svg_file_path, write_to=png_file_path)
+            print(trout_number)
             
             # Remove the SVG file if you don't need it to save space
             os.remove(svg_file_path)
         else:
             print(f"Failed to download image for trout #{trout_number}")
+            print(f"Status Code: {response.status_code}")
+            print(f"Response Body: {response.text}")
 
 
 def fetch_parent(data, child_id):
@@ -270,9 +272,6 @@ def index():
 
     # Initial or non-POST request
     return render_template('index.html', family_tree_image=None, data=processed_data)
-
-# <label for="show_images">Show Images:</label>
-# <input type="checkbox" id="show_images" name="show_images" value="true">
 
 if __name__ == '__main__':
     app.run(debug=True, threaded=False)
