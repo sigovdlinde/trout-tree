@@ -1,22 +1,6 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Trout Family Tree</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-</head>
+{% extends 'layout.html' %}
 
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-WJ06LFDZTQ"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-
-  gtag('config', 'G-WJ06LFDZTQ');
-</script>
-
-<body>
+{% block content %}
     <div class="content">
         <form method="POST">
             <label for="trout_id">Enter Trout ID:</label>
@@ -42,5 +26,4 @@
             <img src="{{ family_tree_image }}" alt="Family Tree">
         {% endif %}
     </div>
-</body>
-</html>
+{% endblock %}
