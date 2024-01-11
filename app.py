@@ -270,8 +270,10 @@ def index():
                 figsize = (12, 12)
             elif node_count < 50:
                 figsize = (20, 20)
-            else:
+            elif node_count < 100:
                 figsize = (30, 30)
+            else:
+                figsize = (60, 60)
 
             plt.figure(figsize=figsize)
             nx.draw(G, pos, with_labels=True, node_size=1500, node_color=node_colors, font_size=10, arrows=True)
