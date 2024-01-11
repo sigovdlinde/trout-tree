@@ -210,7 +210,7 @@ def index():
 
             if node_count < 4:
                 figsize = (3, 3)
-                dpi = 500
+                dpi = 300
             else:
                 figsize = (12, 12)
                 dpi = 300
