@@ -289,8 +289,45 @@ def index():
 def statistics():
     api_data = get_api_data()
     processed_data = process_api_data(api_data)
+    
+#youngest (all trout)
+    youngest_trout = processed_data[get_latest_trout_number('https://api.nftrout.com/trout/23294/')]['name']
 
-    return render_template('statistics.html')
+#youngest_named
+    youngest_num = processed_data[get_latest_trout_number('https://api.nftrout.com/trout/23294/')]['id']
+    youngest_named = ""
+    for x in range(0,youngest_num):
+        if processed_data[youngest_num - 1*x]['name'] != "Sapphire TROUT #%s" % (youngest_num - (1*x)):
+            youngest_named = processed_data[youngest_num -1*x]['name']
+            break
+#youngest_unnamed
+    youngest_unnamed = ""
+    for x in range(0,youngest_num):
+        if processed_data[youngest_num - (1*x)]['name'] == "Sapphire TROUT #%s" % (youngest_num - (1*x)):
+            youngest_unnamed = processed_data[youngest_num -1*x]['name']
+            break
 
+#all named trouts
+    named_trouts = {}
+    for x in range(1,youngest_num+1):
+        if processed_data[x]['name'] != "Sapphire TROUT #%s" % (x):
+                named_trouts[x] = processed_data[x]['name']
+
+#average trout per holder
+
+            
+#Largest ancestor tree (X ancestors)
+largest_tree_size = 0
+largest_tree_trout_number = 0
+largest_tree_trout_name = ""
+
+       
+    
+    return render_template('statistics.html', youngest_named = youngest_named,
+                                                                                youngest_trout = youngest_trout,
+                                                                                youngest_unnamed = youngest_unnamed,
+                                                                                named_trouts = named_trouts,
+                                                                                processed_data = processed_data)
+    #return render_template('statistics.html')
 if __name__ == '__main__':
     app.run(debug=True, threaded=False)
