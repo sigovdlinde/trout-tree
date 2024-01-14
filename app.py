@@ -317,13 +317,13 @@ def statistics():
 
             
 #Largest ancestor tree (X ancestors)
-largest_tree_size = 0
-largest_tree_trout_number = 0
-largest_tree_trout_name = ""
+    largest_tree_size = 0
+    largest_tree_trout_number = 0
+    largest_tree_trout_name = ""
 
        
     
-return render_template('statistics.html',     youngest_named = youngest_named,
+    return render_template('statistics.html',youngest_named = youngest_named,
                                                                                 youngest_trout = youngest_trout,
                                                                                 youngest_unnamed = youngest_unnamed,
                                                                                 named_trouts = named_trouts,
