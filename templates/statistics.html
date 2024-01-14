@@ -2,5 +2,19 @@
 
 {% block content %}
 <h1>Statistics</h1>
-<!-- Add your statistics content here -->
+<p> Youngest named trout: {{ youngest_named }}</p>
+<p> Youngest trout: {{youngest_trout}}</p> 
+<p> Youngest unnamed trout: {{youngest_unnamed}}</p> 
+
+<form>
+        <label for="dropdown">Named Trouts List:</label>
+        <select id="dropdown" name="dropdown">
+            {% for key, value in named_trouts.items() %}
+                <option value="{{ value }}" > {{ key }} {{value}}</option>
+            {% endfor %}
+        </select>
+    </form>
+
+
+<!--  <p> Dictionary: {{processed_data}}</p>  -- >
 {% endblock %}
