@@ -323,11 +323,12 @@ largest_tree_trout_name = ""
 
        
     
-    return render_template('statistics.html', youngest_named = youngest_named,
+return render_template('statistics.html',     youngest_named = youngest_named,
                                                                                 youngest_trout = youngest_trout,
                                                                                 youngest_unnamed = youngest_unnamed,
                                                                                 named_trouts = named_trouts,
-                                                                                processed_data = processed_data)
+                                                                                #processed_data = processed_data
+                                                                                )
     #return render_template('statistics.html')
 if __name__ == '__main__':
     app.run(debug=True, threaded=False)
