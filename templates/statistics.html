@@ -2,8 +2,8 @@
 
 {% block content %}
 <h1>Statistics</h1>
-<p> Youngest named trout: {{ youngest_named }}</p>
 <p> Youngest trout: {{youngest_trout}}</p> 
+<p> Youngest named trout: {{ youngest_named }} (#{{youngest_named_num}})</p>
 <p> Youngest unnamed trout: {{youngest_unnamed}}</p> 
 
 <form>
@@ -16,5 +16,24 @@
     </form>
 
 
-<!--  <p> Dictionary: {{processed_data}}</p>  -- >
+    <div class="content">
+        <form method="POST">
+            <label for="trout_name">Enter Trout name:</label>
+            <input type="text" id="trout_name" name="trout_name">
+            <input type="submit" value="Show IDs">
+
+        </form>
+
+        <h2>IDs for Trout '{{ request.form.get('trout_name') }}':</h2>
+        <ul>
+            {% for id in id_from_name_list %}
+                <li>{{ id }}</li>
+            {% endfor %}
+        </ul>
+
+    </div>
+
+
+
+ <!-- <p> Dictionary: {{processed_data}}</p>  -->
 {% endblock %}

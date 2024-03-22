@@ -285,7 +285,16 @@ def index():
     # Initial or non-POST request
     return render_template('index.html', family_tree_image=None, data=processed_data)
 
-@app.route('/statistics')
+
+
+
+#######################################
+
+
+        
+
+
+@app.route('/statistics', methods=['GET', 'POST'])
 def statistics():
     api_data = get_api_data()
     processed_data = process_api_data(api_data)
@@ -296,9 +305,11 @@ def statistics():
 #youngest_named
     youngest_num = processed_data[get_latest_trout_number('https://api.nftrout.com/trout/23294/')]['id']
     youngest_named = ""
+    youngest_named_num = 0
     for x in range(0,youngest_num):
         if processed_data[youngest_num - 1*x]['name'] != "Sapphire TROUT #%s" % (youngest_num - (1*x)):
             youngest_named = processed_data[youngest_num -1*x]['name']
+            youngest_named_num = processed_data[youngest_num -1*x]['id']
             break
 #youngest_unnamed
     youngest_unnamed = ""
@@ -313,22 +324,33 @@ def statistics():
         if processed_data[x]['name'] != "Sapphire TROUT #%s" % (x):
                 named_trouts[x] = processed_data[x]['name']
 
-#average trout per holder
+#Converts trout name to a list of IDs
+    id_from_name_list = []
+    trout_name = None
+    if request.method == 'POST':
+        trout_name = request.form.get('trout_name')
+    for x in range(1,youngest_num+1):
+        if trout_name is not None and processed_data[x]['name'] == trout_name:
+            id_from_name_list.append(processed_data[x]['id'])
+        
+#average trout per holder (WIP)
 
             
 #Largest ancestor tree (X ancestors)
-    largest_tree_size = 0
-    largest_tree_trout_number = 0
-    largest_tree_trout_name = ""
+   # largest_tree_size = 0
+   # largest_tree_trout_number = 0
+  #  largest_tree_trout_name = ""
 
        
     
-    return render_template('statistics.html',youngest_named = youngest_named,
+    return render_template('statistics.html', youngest_named = youngest_named,
+                                                                               youngest_named_num = youngest_named_num,
                                                                                 youngest_trout = youngest_trout,
                                                                                 youngest_unnamed = youngest_unnamed,
                                                                                 named_trouts = named_trouts,
+                                                                                id_from_name_list = id_from_name_list,
                                                                                 #processed_data = processed_data
                                                                                 )
-    #return render_template('statistics.html')
+    
 if __name__ == '__main__':
     app.run(debug=True, threaded=False)
